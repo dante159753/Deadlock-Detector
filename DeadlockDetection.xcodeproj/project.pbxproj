@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		FE91028E231A225A00B3D1A6 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FE91028D231A225A00B3D1A6 /* main.cpp */; };
+		FE910296231A2B9D00B3D1A6 /* lock_manager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FE910294231A2B9D00B3D1A6 /* lock_manager.cpp */; };
+		FE910299231A2CE500B3D1A6 /* lock.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FE910297231A2CE500B3D1A6 /* lock.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +27,10 @@
 /* Begin PBXFileReference section */
 		FE91028A231A225A00B3D1A6 /* DeadlockDetection */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DeadlockDetection; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE91028D231A225A00B3D1A6 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		FE910294231A2B9D00B3D1A6 /* lock_manager.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = lock_manager.cpp; sourceTree = "<group>"; };
+		FE910295231A2B9D00B3D1A6 /* lock_manager.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = lock_manager.hpp; sourceTree = "<group>"; };
+		FE910297231A2CE500B3D1A6 /* lock.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = lock.cpp; sourceTree = "<group>"; };
+		FE910298231A2CE500B3D1A6 /* lock.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = lock.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +64,10 @@
 			isa = PBXGroup;
 			children = (
 				FE91028D231A225A00B3D1A6 /* main.cpp */,
+				FE910294231A2B9D00B3D1A6 /* lock_manager.cpp */,
+				FE910295231A2B9D00B3D1A6 /* lock_manager.hpp */,
+				FE910297231A2CE500B3D1A6 /* lock.cpp */,
+				FE910298231A2CE500B3D1A6 /* lock.hpp */,
 			);
 			path = DeadlockDetection;
 			sourceTree = "<group>";
@@ -118,7 +128,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FE910296231A2B9D00B3D1A6 /* lock_manager.cpp in Sources */,
 				FE91028E231A225A00B3D1A6 /* main.cpp in Sources */,
+				FE910299231A2CE500B3D1A6 /* lock.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
