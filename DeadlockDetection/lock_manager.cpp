@@ -8,6 +8,15 @@
 
 #include "lock_manager.hpp"
 
+LockManager::LockManager() {
+    stop = false;
+    check_interval = 1;
+    deadlock_checker = new thread([this]{ this->detectDeadlock(); });
+}
+
+LockManager::~LockManager() {
+    stopDeadlockDetector();
+}
 
 LockManager &LockManager::getInstance() {
     static LockManager inst;
@@ -16,14 +25,15 @@ LockManager &LockManager::getInstance() {
 
 shared_ptr<Lock> LockManager::getLock(int pid, int res_id, int & ret) {
     bool deadlock_possible;
-    ret = 0; // no deadlock
-    auto p = getLockInternal(pid, res_id, deadlock_possible);
-    
-    int tokill;
-    if(deadlock_possible && isDeadLock(tokill)) { // deadlock
-        releaseProcess(tokill);
-        ret = 1;
+    ret = 0; // ok
+    if(findLock(pid, res_id) != nullptr) {
+        ret = 1; // duplicate lock
+        return nullptr;
     }
+
+    mtx.lock();
+    auto p = getLockInternal(pid, res_id, deadlock_possible);
+    mtx.unlock();
     return p;
 }
 
@@ -63,22 +73,20 @@ shared_ptr<Lock> LockManager::getLockInternal(int pid, int res_id, bool & deadlo
 }
 
 shared_ptr<Lock> LockManager::findLock(int pid, int res_id) {
+    shared_ptr<Lock> result = nullptr;
+    mtx.lock();
     for(const auto& p: pid_to_locks[pid].second) {
-        if(p->res_id == res_id) return p;
+        if(p->res_id == res_id) result = p;
     }
-    return nullptr;
+    mtx.unlock();
+    return result;
 }
 
 int LockManager::releaseLock(shared_ptr<Lock> lock) {
     bool deadlock_possible;
+    mtx.lock();
     releaseLockInternal(lock, deadlock_possible);
-    int tokill;
-    if(deadlock_possible) { // check deadlock
-        while(isDeadLock(tokill)) { // may result in multiple deadlocks, resolve until no deadlock
-//            print();
-            releaseProcess(tokill);
-        }
-    }
+    mtx.unlock();
     return 0;
 }
 
@@ -142,7 +150,7 @@ bool LockManager::isDeadLock(int& tokill) {
 void LockManager::releaseProcess(int pid) {
     if(pid_to_locks.count(pid)) {
         list<shared_ptr<Lock>> tmplist = pid_to_locks[pid].second;
-        for(auto p_lock: tmplist) {
+        for(const auto& p_lock: tmplist) {
             bool possible; // no need
             releaseLockInternal(p_lock, possible);
         }
@@ -153,6 +161,45 @@ void LockManager::releaseProcess(int pid) {
     if(lock_graph.count(pid)) lock_graph.erase(pid);
     pid_set.erase(pid);
     printf("erase pid %d\n", pid);
+}
+
+// ============== deadlock detector ==============
+
+void LockManager::startDetection(int interval) {
+    if(deadlock_checker != nullptr) {
+        check_interval = interval;
+        deadlock_checker = new thread([this]{
+            this->detectDeadlock();
+        });
+    }
+}
+
+void LockManager::stopDeadlockDetector() {
+    stop = true;
+    if(deadlock_checker && deadlock_checker->joinable()) {
+        printf("deadlock detector is stoped\n");
+        deadlock_checker->join();
+        deadlock_checker = nullptr;
+    }
+}
+
+void LockManager::detectDeadlock() {
+    using std::chrono::system_clock;
+    while(!stop) {
+//        printf("begin detecting deadlock\n");
+        int tokill;
+        mtx.lock();
+        while(isDeadLock(tokill)) {
+            releaseProcess(tokill);
+        }
+        mtx.unlock();
+        
+        // detection is activated every second
+        std::time_t tt = system_clock::to_time_t (system_clock::now());
+        struct std::tm * ptm = std::localtime(&tt);
+        ptm->tm_sec += check_interval;
+        std::this_thread::sleep_until (system_clock::from_time_t (mktime(ptm)));
+    }
 }
 
 // ===========helper functions to cal SCC=============
@@ -240,10 +287,5 @@ void LockManager::print() {
     for(auto x: pid_set) printf("%d, ", x);
     cout << ']' << endl;
 }
-
-
-
-
-
 
 
