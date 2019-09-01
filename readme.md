@@ -42,16 +42,16 @@ public:
 # V1 锁可以释放
 允许锁释放之后，释放一个锁需要对资源的锁列表进行修改，同时删除死锁图中对应的边。释放锁L0时，假设下一个获得锁的是L1，则在死锁图中删除Ln->L0，添加Ln->L1
 
-释放一个锁之后，可能会产生新的死锁，如
+释放一个锁之后，可能会产生新的死锁，如下例(`lock 1 2`表示线程1请求资源2的锁)
 ```
-1, 2
-1, 3
-2, 2
-3, 3
-2, 3
-3, 2
-release(1, 2)
-release(1, 3)
+lock 1 2
+lock 1 3
+lock 2 2
+lock 3 3
+lock 2 3
+lock 3 2
+release 1 2
+release 1 3
 ```
 
 死锁之后，要释放一部分锁，释放之后可能处于新的死锁状态，即可能有链式反应，所以释放锁之后中需要循环检测死锁并释放死锁进程，直到没有死锁为止。
@@ -66,6 +66,48 @@ release(1, 3)
 检测线程也在LockManager对象的生命周期中进行管理，析构或者手动调用可以停止后台死锁检测。
 
 需要在操作对应数据结构时加锁。
+
+程序log输出如下，记录了所有加锁和解锁操作，以及检测到的死锁的信息
+```
+set lock(pid=1, res_id=2)
+set lock(pid=1, res_id=3)
+set lock(pid=2, res_id=2)
+set lock(pid=3, res_id=3)
+set lock(pid=2, res_id=3)
+set lock(pid=3, res_id=2)
+release lock(pid=1, res_id=2, state=0)
+remove edge(2->1)
+remove edge(3->1)
+add edge(3->2)
+release lock(pid=1, res_id=3, state=0)
+remove edge(3->1)
+remove edge(2->1)
+add edge(2->3)
+detected deadlock: 3->2->3
+will release pid=3(1) to break deadlock
+release lock(pid=3, res_id=3, state=0)
+remove edge(2->3)
+release lock(pid=3, res_id=2, state=1)
+erase pid 3
+set lock(pid=5, res_id=5)
+set lock(pid=6, res_id=6)
+set lock(pid=5, res_id=6)
+set lock(pid=6, res_id=5)
+detected deadlock: 6->5->6
+will release pid=6(1) to break deadlock
+release lock(pid=6, res_id=6, state=0)
+remove edge(5->6)
+release lock(pid=6, res_id=5, state=1)
+erase pid 6
+```
+
+# 使用方法
+```
+cd DeadlockDetection
+cmake .
+make
+./DeadlockDetection
+```
 
 # 更多优化
 1. 锁的实现：如果应用到数据库系统中，需要实现多种锁，然后定义他们的冲突关系。多态实现，分行锁和表锁，读锁和写锁
